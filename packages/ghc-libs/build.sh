@@ -2,10 +2,9 @@ TERMUX_PKG_HOMEPAGE=https://www.haskell.org/ghc/
 TERMUX_PKG_DESCRIPTION="The Glasgow Haskell Compiler - Dynamic Libraries"
 TERMUX_PKG_LICENSE="BSD 2-Clause, BSD 3-Clause, LGPL-2.1"
 TERMUX_PKG_MAINTAINER="Aditya Alok <alok@termux.org>"
-TERMUX_PKG_VERSION=8.10.7
-TERMUX_PKG_REVISION=3
+TERMUX_PKG_VERSION=9.2.5
 TERMUX_PKG_SRCURL="https://downloads.haskell.org/~ghc/${TERMUX_PKG_VERSION}/ghc-${TERMUX_PKG_VERSION}-src.tar.xz"
-TERMUX_PKG_SHA256=e3eef6229ce9908dfe1ea41436befb0455fefb1932559e860ad4c606b0d03c9d
+TERMUX_PKG_SHA256=0606797d1b38e2d88ee2243f38ec6b9a1aa93e9b578e95f0de9a9c0a4144021c
 TERMUX_PKG_DEPENDS="iconv, libffi, ncurses, libgmp, libandroid-posix-semaphore"
 TERMUX_PKG_BUILD_IN_SRC=true
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
@@ -41,7 +40,7 @@ termux_step_pre_configure() {
 
 	for tool in llc opt; do
 		local wrapper="${_WRAPPER_BIN}/${tool}"
-		cat >"$wrapper" <<-EOF
+		cat > "$wrapper" <<- EOF
 			#!$(command -v sh)
 			exec /usr/lib/llvm-12/bin/${tool} "\$@"
 		EOF
@@ -49,14 +48,14 @@ termux_step_pre_configure() {
 	done
 
 	local ar_wrapper="${_WRAPPER_BIN}/${_TERMUX_HOST_PLATFORM}-ar"
-	cat >"$ar_wrapper" <<-EOF
+	cat > "$ar_wrapper" <<- EOF
 		#!$(command -v sh)
 		exec $(command -v ${AR}) "\$@"
 	EOF
 	chmod 0700 "$ar_wrapper"
 
 	local strip_wrapper="${_WRAPPER_BIN}/${_TERMUX_HOST_PLATFORM}-strip"
-	cat >"$strip_wrapper" <<-EOF
+	cat > "$strip_wrapper" <<- EOF
 		#!$(command -v sh)
 		exec $(command -v ${STRIP}) "\$@"
 	EOF
@@ -73,7 +72,7 @@ termux_step_pre_configure() {
 	sed -i 's/LlvmMaxVersion=13/LlvmMaxVersion=14/' configure.ac
 
 	cp mk/build.mk.sample mk/build.mk
-	cat >>mk/build.mk <<-EOF
+	cat >> mk/build.mk <<- EOF
 		SRC_HC_OPTS        = -O -H64m
 		GhcStage1HcOpts    = -O
 		GhcStage2HcOpts    = ${EXTRA_FLAGS}
@@ -92,7 +91,7 @@ termux_step_pre_configure() {
 		StripLibraries     = YES
 	EOF
 
-	patch -p1 <<-EOF
+	patch -p1 <<- EOF
 		--- ghc-8.10.7/rules/build-package-data.mk      2021-06-21 12:24:36.000000000 +0530
 		+++ ghc-8.10.7-patch/rules/build-package-data.mk 2022-01-27 20:31:28.901997265 +0530
 		@@ -68,6 +68,12 @@
