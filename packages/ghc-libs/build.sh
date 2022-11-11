@@ -20,7 +20,6 @@ TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 --with-iconv-libraries=${TERMUX_PREFIX}/lib
 --with-curses-libraries=${TERMUX_PREFIX}/lib
 --with-curses-includes=${TERMUX_PREFIX}/include
---with-curses-libraries-stage0=/usr/lib
 "
 # ghc-pkg is in this package. Here ghci is lib not bin.
 TERMUX_PKG_PROVIDES="haskekl-ghc-pkg, haskell-ghci"
@@ -92,21 +91,36 @@ termux_step_pre_configure() {
 	EOF
 
 	patch -p1 <<- EOF
-		--- ghc-8.10.7/rules/build-package-data.mk      2021-06-21 12:24:36.000000000 +0530
-		+++ ghc-8.10.7-patch/rules/build-package-data.mk 2022-01-27 20:31:28.901997265 +0530
+		--- ghc.orig/rules/build-package-data.mk 2022-11-07 01:10:29.000000000 +0530
+		+++ ghc.mod/rules/build-package-data.mk  2022-11-11 13:08:01.992488180 +0530
 		@@ -68,6 +68,12 @@
 		 \$1_\$2_CONFIGURE_LDFLAGS = \$\$(SRC_LD_OPTS) \$\$(\$1_LD_OPTS) \$\$(\$1_\$2_LD_OPTS)
 		 \$1_\$2_CONFIGURE_CPPFLAGS = \$\$(SRC_CPP_OPTS) \$\$(CONF_CPP_OPTS_STAGE\$3) \$\$(\$1_CPP_OPTS) \$\$(\$1_\$2_CPP_OPTS)
 
 		+ifneq "\$3" "0"
-		+ \$1_\$2_CONFIGURE_LDFLAGS += $LDFLAGS
-		+ \$1_\$2_CONFIGURE_CPPFLAGS += $CPPFLAGS
-		+ \$1_\$2_CONFIGURE_CFLAGS += $CFLAGS
+		+ \$1_\$2_CONFIGURE_LDFLAGS += ${LDFLAGS}
+		+ \$1_\$2_CONFIGURE_CPPFLAGS += ${CPPFLAGS}
+		+ \$1_\$2_CONFIGURE_CFLAGS += ${CFLAGS}
 		+endif
 		+
 		 \$1_\$2_CONFIGURE_OPTS += --configure-option=CFLAGS="\$\$(\$1_\$2_CONFIGURE_CFLAGS)"
 		 \$1_\$2_CONFIGURE_OPTS += --configure-option=LDFLAGS="\$\$(\$1_\$2_CONFIGURE_LDFLAGS)"
 		 \$1_\$2_CONFIGURE_OPTS += --configure-option=CPPFLAGS="\$\$(\$1_\$2_CONFIGURE_CPPFLAGS)"
+		@@ -104,9 +110,12 @@
+		 \$1_\$2_CONFIGURE_OPTS += --configure-option=--with-gmp
+		 endif
+
+		-
+		 ifneq "\$\$(CURSES_LIB_DIRS)" ""
+		-\$1_\$2_CONFIGURE_OPTS += --configure-option=--with-curses-libraries="\$\$(CURSES_LIB_DIRS)"
+		+ ifeq "\$3" "0"
+		+  \$1_\$2_CONFIGURE_OPTS += --configure-option=--with-curses-libraries="/usr/lib"
+		+ else
+		+  \$1_\$2_CONFIGURE_OPTS += --configure-option=--with-curses-libraries="\$\$(CURSES_LIB_DIRS)"
+		+ endif
+		 endif
+
+		 \$1_\$2_CONFIGURE_OPTS += --configure-option=--host=\$(TargetPlatformFull)
 	EOF
 
 	./boot
